@@ -1,0 +1,33 @@
+AGODA TASK
+BY: KAREEM FOUDA
+==================
+Rate Limiter
+--------------
+Specs:
+------
+- Allows maximum Requests "R" per time period "T" for api key "K"
+- Default maximum Requests "D_R" is given for unknown clients
+- "K" and "R" pairs are configurable per api key. Configuration found in src/main/resources/application.properties (some test configs are already there)
+- "D_R" is constant across all unknown clients found in @com.agoda.task.utils.ratelimiter.Constants;
+- "T" is constant across all clients found in @com.agoda.task.utils.ratelimiter.Constants;
+- If client exceeds his limit, he is banned for time "B_T"
+- "B_T" is constant for all clients and is found in @com.agoda.task.utils.ratelimiter.Constants;
+- Rate limiter is time-window based so at any "T" the client cannot make more than "R" requests. In other words if a client made "R-1" requests in the 
+last second before the current "T" window, those "R-1" requests will be considered in the new "T" window
+.............................................................................................................
+Implementations Notes:
+----------------------
+- RateLimiterManager is the manager of the rate limiting functionality and the entry point to its usage.
+- it stores the original rate limiting config,  banned clients and current apiKey rate limiting info.
+- RateLimitingInfo stores the current info per key and handles all functionalities per apiKey level
+- The implementation depends on maps to store configurations, queue to store request timestamps and time-based values to reset and ban apiKeys
+- An interesting design decision here is how the apiKeys get flushed from the maps for that there were multiple options:
+   1- Have a time-based task to flush relevant keys every "T" or "B_T"
+   2- Flush relevant keys with every put/ get from the maps
+   3- Flush relevant key when accessing it.
+   I chose approach 3 for simplicity, this has the disadvantage that if a client is not accessed it will stay there forever (till the app restart) but it will be
+   sufficient for our case.
+- The whole implementation resembles a time-based cache without the time-based flushing functionality.
+- The rate limiter is not thread-safe as it wasn't mentioned explicitly in the task description. If needed this will involve the usage of ConcurrentHashMap and
+synchronized functions and for sure a bit more thought.
+- I added comments wherever needed to indicate assumptions and notes
